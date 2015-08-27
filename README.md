@@ -4,7 +4,7 @@ This is an experimental (read: not quite production-ready) version of TreeHacks'
 
 Why Slack? Communication is a huge problem at hackathons, and Slack gives us a really nice unified communications platform, including announcements, feedback, volunteer communication, hacker questions, sponsor relations, hacker-to-hacker community chat, and now, mentorship. Plus, we get configurable mobile and email notifications for free.
 
-Note that this is still pretty hacky. It works well in our manual tests, but it's undocumented, has no automted testing, and utilizes some private API's. Use at your own risk, yada yada yada. That said, we're committed to making this really awesome, and we'd love all the help we can get - Pull Requests welcome! We'd be delighted if this got used at other events, and if you need any kind of help setting it up, shoot an email to `rpalefsk@stanford.edu`.
+Note that this is still pretty hacky. It works well in our manual tests, but it's undocumented, has no automated testing, and utilizes some private API's. Use at your own risk, yada yada yada. That said, we're committed to making this really awesome, and we'd love all the help we can get - Pull Requests welcome! We'd be delighted if this got used at other events, and if you need any kind of help setting it up, shoot an email to `rpalefsk@stanford.edu`.
 
 The system is a basically Hacker News distilled into one repo - it's built with node.js, ES6 (via Babel), React, and Material Design. The app is split into two components: Mentorbot (bot) and Mentor Dashboard (dash). They share a lot of code and complement one another, but they each work perfectly fine on their own, so we'll explain them separately.
 
