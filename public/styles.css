@@ -1,0 +1,9 @@
+.material-icons.right-icon {
+  float: right;
+  margin-right: 0px;
+  padding-right: 20px;
+}
+
+.collapsible {
+  box-shadow: none;
+}
