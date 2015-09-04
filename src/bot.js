@@ -25,7 +25,7 @@ api.on("command", function*(data, res) {
         fallback: `${data.user_name} asked: ${data.text}`,
         author_name: `${name} (${data.user_name})`,
         author_icon: image,
-        text: tagify(data.text)
+        text: tagify(data.text),
       }
     ])
   });
@@ -90,6 +90,7 @@ var createGroup = function*(m, mentorId) {
       mentee = member;
     }
   });
+
   var name = `${mentor.name}-${mentee.name}`;
   var groups = (yield api.slackApi("groups.list")).groups;
   var group = null;
@@ -101,15 +102,45 @@ var createGroup = function*(m, mentorId) {
       break;
     }
   }
+
+  // Check whether two mentors were previously matched :)
   if (!group) {
-    group = (yield api.slackApi("groups.create", {name: name})).group;
+    var swap_name = `${mentee.name}-${mentor.name}`;
+    for (var i = 0; i < groups.length; i++) {
+      if (swap_name.indexOf(groups[i].name) === 0) {
+        group = groups[i];
+        name = swap_name;
+        existing = true;
+        break;
+      }
+    }
   }
+
+  if (!group) {
+    var iter = 0;
+    while (!group) {
+      try {
+        group = (yield api.slackApi("groups.create", {name: name})).group;
+      } catch(err) {
+          if (err.message === "name_taken") {
+            name = `${mentor.name}-${mentee.name}-${iter}`;
+            iter += 1;
+          } else {
+            throw err;
+          }
+      }
+    }
+  } else if (group.is_archived) {
+    yield api.slackApi("groups.unarchive", {channel: group.id});
+  }
+
   var id = group.id;
   if (!existing) {
     yield [
-      api.slackApi("groups.setPurpose", {
+      api.slackApi("chat.postMessage", {
         channel: id,
-        purpose: `Hey ${mentee.profile.first_name}, meet your mentor ${mentor.profile.first_name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: ${text}`
+          as_user: true,
+        text: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was:\n>${text.replace("\n", "\n>")}`
       }),
       api.slackApi("groups.invite", {
         channel: id,
@@ -124,14 +155,14 @@ var createGroup = function*(m, mentorId) {
     yield api.slackApi("chat.postMessage", {
       channel: id,
       as_user: true,
-      text: `<!group>, y'all have been matched again! This time the question was: *${text}*`
+      text: `<!group>, y'all have been matched again! This time the question was:\n>${text.replace("\n", "\n>")}`
     });
   }
 };
 
 
 var onChannelDelete = function*(m) {
-  yield api.slackApi("chat.delete", {
+  api.slackApi("chat.delete", {
     channel: m.channel,
     ts: m.ts,
     token: admin_token
@@ -151,7 +182,7 @@ var mentorGroupId = api.slackApi("groups.list")
 });
 
 api.on("message", function*(m) {
-  if (m.type === "reaction_added") {
+  if (m.type === "reaction_added" && m.item.channel === (yield mentorGroupId)) {
     yield onReactionAdded(m);
   }
   if (m.type === "message" &&
