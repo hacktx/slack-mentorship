@@ -109,7 +109,7 @@ var createGroup = function*(m, mentorId) {
     yield [
       api.slackApi("groups.setPurpose", {
         channel: id,
-        purpose: `Hey ${mentee.profile.first_name}, meet your mentor ${mentor.profile.first_name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: ${text}`
+        purpose: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: ${text}`
       }),
       api.slackApi("groups.invite", {
         channel: id,
