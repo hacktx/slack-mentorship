@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 import requestretry from "requestretry";
 import session from "express-session";
 import compression from "compression";
+import mentor_tags from "../mentor_tags.js";
 import {
   client_id,
   client_secret,
@@ -27,6 +28,46 @@ app.use(session({
 }));
 
 app.use(compression());
+
+var request = (endpoint) => {
+  return Q.Promise((resolve, reject) => {
+    requestretry({
+      url: endpoint,
+      method: "GET",
+      maxAttempts: 5,
+      retryDelay: 0,
+      retryStrategy: requestretry.RetryStrategies.HTTPOrNetworkError
+    }, (err, response, body) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(JSON.parse(body));
+      }
+    });
+  })
+}
+
+var getProfile = (token) => {
+  return request(`https://slack.com/api/users.profile.get?token=${token}`);
+}
+
+var getPrefs = (token) => {
+  return request(`https://slack.com/api/users.prefs.get?token=${token}`);
+}
+
+app.get("/presetTags", (req, res) => {
+    getProfile(req.session.token)
+      .then()
+      .then((resp) => {
+        var email = resp.profile.email;
+
+        if (email in mentor_tags) {
+          res.json(mentor_tags[email]);
+        } else {
+          res.json([]);
+        }
+      }).done();
+});
 
 app.get("/oauth", (req, res) => {
   api.slackApi("oauth.access", {
@@ -71,28 +112,10 @@ app.post("/highlight", (req, res) => {
   .done()
 })
 
-var getPrefs = (token) => {
-  return Q.Promise((resolve, reject) => {
-    requestretry({
-      url: `https://slack.com/api/users.prefs.get?token=${token}`,
-      method: "GET",
-      maxAttempts: 5,
-      retryDelay: 0,
-      retryStrategy: requestretry.RetryStrategies.HTTPOrNetworkError
-    }, (err, response, body) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(JSON.parse(body));
-      }
-    });
-  })
-}
-
 app.get("/highlights", (req, res) => {
   getPrefs(req.session.token)
   .then()
-  .then((resp) => {
+  .then((resp) => {    
     res.json(resp.prefs.highlight_words);
   })
   .done()

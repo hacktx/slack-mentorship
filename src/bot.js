@@ -59,6 +59,8 @@ var onReactionAdded = function*(m) {
   if (m.reaction !== "raising_hand") return;
   if (m.reaction !== "raising_hand") return;
   if (m.item.ts in deleted) return;
+  if (!m.item.channel) return;
+
   deleted[m.item.ts] = true;
   var toDelete = (yield api.slackApi("groups.history", {
     channel: m.item.channel,
@@ -66,6 +68,9 @@ var onReactionAdded = function*(m) {
     oldest: m.item.ts,
     inclusive: 1
   })).messages[0];
+
+  if (!toDelete.attachments) return;
+
   yield api.slackApi("chat.delete", {
     channel: m.item.channel,
     ts: m.item.ts,
@@ -130,15 +135,6 @@ var createGroup = function*(m, mentorId) {
   }
 };
 
-
-var onChannelDelete = function*(m) {
-  yield api.slackApi("chat.delete", {
-    channel: m.channel,
-    ts: m.ts,
-    token: admin_token
-  }, ["message_not_found"]).done();
-};
-
 var mentorGroupId = api.slackApi("groups.list")
 .then(res => {
   var groups = res.groups;
@@ -154,11 +150,5 @@ var mentorGroupId = api.slackApi("groups.list")
 api.on("message", function*(m) {
   if (m.type === "reaction_added") {
     yield onReactionAdded(m);
-  }
-  if (m.type === "message" &&
-      m.subtype !== "message_deleted" &&
-      m.channel === (yield mentorGroupId) &&
-      m.user !== api.selfId) {
-    yield onChannelDelete(m);
   }
 });

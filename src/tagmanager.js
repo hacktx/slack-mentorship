@@ -13,6 +13,7 @@ class TagManager extends EventEmitter {
     this._populateRelated();
     this._populateAllSynonyms();
     this._buildIndex();
+    this._populatePresetTags();
   }
 
   _populateRelated() {
@@ -36,6 +37,35 @@ class TagManager extends EventEmitter {
         this._insert(this.index, syn, i);
       });
     });
+  }
+
+  _populatePresetTags() {
+    $.ajax({
+      method: "GET",
+      url: "/presetTags",
+    }).then((components) => {
+      var tags = components
+        .filter(s => s)
+        .map(s => s.replace("#", ""))
+        .map(s => this.tagWithName(s))
+        .filter(s => {
+          if (this.chosen.indexOf(s) != -1) return false;
+          return s;
+        });
+
+      this.chosen = this.chosen.concat(tags);
+
+      var custom = components.filter(s => {
+        var stripped = s.replace("#", "");
+        if (this.customListeners.indexOf(s) != -1) return false;
+        if (this.tagWithName(stripped)) return false;
+        if (this.allSynonyms.indexOf(stripped) !== -1) return false;          
+        return true;
+      });
+
+      this.customListeners = this.customListeners.concat(custom);
+      this.save();
+    })
   }
 
   _insert(trie, word, val) {
@@ -107,6 +137,9 @@ class TagManager extends EventEmitter {
   }
 
   add(tag, after) {
+    if (this.tagIsChosen(tag)) {
+      return;
+    }
     if (after && this.tagIsChosen(after)) {
       this.chosen.splice(this.indexOfTag(after) + 1, 0, tag);
     } else {
@@ -175,20 +208,27 @@ class TagManager extends EventEmitter {
       url: "/highlights",
       method: "GET"
     }).then(rawStr => {
-      console.log("RAWSTR", rawStr);
       var components = rawStr.split(",");
-      this.chosen = components
+      var tags = components
         .filter(s => s)
         .map(s => s.replace("#", ""))
         .map(s => this.tagWithName(s))
-        .filter(s => s);
+        .filter(s => {
+          if (this.chosen.indexOf(s) != -1) return false;
+          return s;
+        });
 
-      this.customListeners = components.filter(s => {
+      this.chosen = this.chosen.concat(tags);
+
+      var custom = components.filter(s => {
         var stripped = s.replace("#", "");
+        if (this.customListeners.indexOf(s) != -1) return false;
         if (this.tagWithName(stripped)) return false;
-        if (this.allSynonyms.indexOf(stripped) !== -1) return false;
-        return true;
+        if (this.allSynonyms.indexOf(stripped) !== -1) return false;          
+        return s;
       });
+
+      this.customListeners = this.customListeners.concat(custom);
       this.emit("change");
     })
   }
