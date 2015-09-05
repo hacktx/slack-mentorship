@@ -25,7 +25,7 @@ api.on("command", function*(data, res) {
         fallback: `${data.user_name} asked: ${data.text}`,
         author_name: `${name} (${data.user_name})`,
         author_icon: image,
-        text: tagify(data.text)
+        text: tagify(data.text),
       }
     ])
   });
@@ -107,9 +107,10 @@ var createGroup = function*(m, mentorId) {
   var id = group.id;
   if (!existing) {
     yield [
-      api.slackApi("groups.setPurpose", {
+      api.slackApi("chat.postMessage", {
         channel: id,
-        purpose: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: ${text}`
+          as_user: true,
+        text: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: *${text}*`
       }),
       api.slackApi("groups.invite", {
         channel: id,
