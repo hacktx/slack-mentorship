@@ -115,7 +115,7 @@ var createGroup = function*(m, mentorId) {
       api.slackApi("chat.postMessage", {
         channel: id,
           as_user: true,
-        text: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was: *${text}*`
+        text: `Hey ${mentee.profile.first_name || mentee.name}, meet your mentor ${mentor.profile.first_name || mentor.name}! You're welcome to keep it digital here, but we encourage you to meet up and debug face to face! Your question was:\n>${text.replace("\n", "\n>")}`
       }),
       api.slackApi("groups.invite", {
         channel: id,
@@ -130,7 +130,7 @@ var createGroup = function*(m, mentorId) {
     yield api.slackApi("chat.postMessage", {
       channel: id,
       as_user: true,
-      text: `<!group>, y'all have been matched again! This time the question was: *${text}*`
+      text: `<!group>, y'all have been matched again! This time the question was:\n>${text.replace("\n", "\n>")}`
     });
   }
 };
