@@ -95,6 +95,7 @@ var createGroup = function*(m, mentorId) {
       mentee = member;
     }
   });
+
   var name = `${mentor.name}-${mentee.name}`;
   var groups = (yield api.slackApi("groups.list")).groups;
   var group = null;
@@ -104,6 +105,18 @@ var createGroup = function*(m, mentorId) {
       group = groups[i];
       existing = true;
       break;
+    }
+  }
+
+  // Check whether two mentors were previously matched :)
+  if (!group) {
+    name = `${mentee.name}-${mentor.name}`;
+    for (var i = 0; i < groups.length; i++) {
+      if (name.indexOf(groups[i].name) === 0) {
+        group = groups[i];
+        existing = true;
+        break;
+      }
     }
   }
 
