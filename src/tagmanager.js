@@ -44,26 +44,7 @@ class TagManager extends EventEmitter {
       method: "GET",
       url: "/presetTags",
     }).then((components) => {
-      var tags = components
-        .filter(s => s)
-        .map(s => s.replace("#", ""))
-        .map(s => this.tagWithName(s))
-        .filter(s => {
-          if (this.chosen.indexOf(s) != -1) return false;
-          return s;
-        });
-
-      this.chosen = this.chosen.concat(tags);
-
-      var custom = components.filter(s => {
-        var stripped = s.replace("#", "");
-        if (this.customListeners.indexOf(s) != -1) return false;
-        if (this.tagWithName(stripped)) return false;
-        if (this.allSynonyms.indexOf(stripped) !== -1) return false;          
-        return true;
-      });
-
-      this.customListeners = this.customListeners.concat(custom);
+      this.updateComponents(components);
       this.save();
     })
   }
@@ -96,6 +77,28 @@ class TagManager extends EventEmitter {
       }
     }
     return res;
+  }
+
+  updateComponents(components) {
+    var tags = components
+      .filter(s => s)
+      .map(s => s.replace("#", ""))
+      .map(s => this.tagWithName(s))
+      .filter(s => {
+        if (this.chosen.indexOf(s) != -1) return false;
+        return s;
+      });
+
+    this.chosen = this.chosen.concat(tags);
+     var custom = components.filter(s => {
+      var stripped = s.replace("#", "");
+      if (this.customListeners.indexOf(s) != -1) return false;
+      if (this.tagWithName(stripped)) return false;
+      if (this.allSynonyms.indexOf(stripped) !== -1) return false;
+      return true;
+    });
+
+    this.customListeners = this.customListeners.concat(custom);
   }
 
   search(query, limit = 10) {
@@ -209,26 +212,7 @@ class TagManager extends EventEmitter {
       method: "GET"
     }).then(rawStr => {
       var components = rawStr.split(",");
-      var tags = components
-        .filter(s => s)
-        .map(s => s.replace("#", ""))
-        .map(s => this.tagWithName(s))
-        .filter(s => {
-          if (this.chosen.indexOf(s) != -1) return false;
-          return s;
-        });
-
-      this.chosen = this.chosen.concat(tags);
-
-      var custom = components.filter(s => {
-        var stripped = s.replace("#", "");
-        if (this.customListeners.indexOf(s) != -1) return false;
-        if (this.tagWithName(stripped)) return false;
-        if (this.allSynonyms.indexOf(stripped) !== -1) return false;          
-        return s;
-      });
-
-      this.customListeners = this.customListeners.concat(custom);
+      this.updateComponents(components);
       this.emit("change");
     })
   }
