@@ -106,9 +106,13 @@ var createGroup = function*(m, mentorId) {
       break;
     }
   }
+
   if (!group) {
     group = (yield api.slackApi("groups.create", {name: name})).group;
+  } else if (group.is_archived) {
+    yield api.slackApi("groups.unarchive", {channel: group.id});
   }
+
   var id = group.id;
   if (!existing) {
     yield [
