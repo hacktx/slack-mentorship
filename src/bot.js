@@ -177,7 +177,7 @@ var mentorGroupId = api.slackApi("groups.list")
 });
 
 api.on("message", function*(m) {
-  if (m.type === "reaction_added") {
+  if (m.type === "reaction_added" && m.item.channel === mentorGroupId) {
     yield onReactionAdded(m);
   } else if (m.type === "team_join") {
     yield onUserJoined(m);
