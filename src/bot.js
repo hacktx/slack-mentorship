@@ -6,6 +6,7 @@ import {
   admin_token,
   bot_port,
   mentor_group_name,
+  first_time_text,
 } from "../config";
 
 var api = new Slack(bot_token)
@@ -152,6 +153,17 @@ var createGroup = function*(m, mentorId) {
   }
 };
 
+var onUserJoined = function*(m) {
+  for (var i = 0; i < first_time_text.length; i++) {
+    yield api.slackApi("chat.postMessage", {
+        channel: "@" + m.user.name,
+        as_user: false,
+        text: first_time_text[i],
+        link_names: 1,
+    });
+  }
+}
+
 var mentorGroupId = api.slackApi("groups.list")
 .then(res => {
   var groups = res.groups;
@@ -167,5 +179,7 @@ var mentorGroupId = api.slackApi("groups.list")
 api.on("message", function*(m) {
   if (m.type === "reaction_added") {
     yield onReactionAdded(m);
+  } else if (m.type === "team_join") {
+    yield onUserJoined(m);
   }
 });
