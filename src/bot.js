@@ -7,7 +7,10 @@ import {
   bot_port,
   mentor_group_name,
   first_time_text,
+  first_time_mentor_text,
 } from "../config";
+
+import mentor_tags from "../mentor_tags.js";
 
 var api = new Slack(bot_token)
 api.listenForCommands("/commands", bot_port);
@@ -153,17 +156,6 @@ var createGroup = function*(m, mentorId) {
   }
 };
 
-var onUserJoined = function*(m) {
-  for (var i = 0; i < first_time_text.length; i++) {
-    yield api.slackApi("chat.postMessage", {
-        channel: "@" + m.user.name,
-        as_user: false,
-        text: first_time_text[i],
-        link_names: 1,
-    });
-  }
-}
-
 var mentorGroupId = api.slackApi("groups.list")
 .then(res => {
   var groups = res.groups;
@@ -175,6 +167,33 @@ var mentorGroupId = api.slackApi("groups.list")
   }
   throw new Error(`No group with name ${mentor_group_name} found!`);
 });
+
+var onUserJoined = function*(m) {
+  if (m.user.email in mentor_tags) {
+    for (var i = 0; i < first_time_mentor_text.length; i++) {
+      yield api.slackApi("chat.postMessage", {
+        channel: "@" + m.user.name,
+        as_user: false,
+        text: first_time_mentor_text[i],
+        link_names: 1,
+      });
+    }
+
+    yield api.slackApi("groups.invite", {
+      channel: mentorGroupId,
+      user: m.user.id,
+    });
+  } else {
+    for (var i = 0; i < first_time_text.length; i++) {
+      yield api.slackApi("chat.postMessage", {
+          channel: "@" + m.user.name,
+          as_user: false,
+          text: first_time_text[i],
+          link_names: 1,
+      });
+    }
+  }
+}
 
 api.on("message", function*(m) {
   if (m.type === "reaction_added" && m.item.channel === mentorGroupId) {
