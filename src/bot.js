@@ -114,10 +114,11 @@ var createGroup = function*(m, mentorId) {
 
   // Check whether two mentors were previously matched :)
   if (!group) {
-    name = `${mentee.name}-${mentor.name}`;
+    var swap_name = `${mentee.name}-${mentor.name}`;
     for (var i = 0; i < groups.length; i++) {
-      if (name.indexOf(groups[i].name) === 0) {
+      if (swap_name.indexOf(groups[i].name) === 0) {
         group = groups[i];
+        name = swap_name;
         existing = true;
         break;
       }
@@ -125,7 +126,19 @@ var createGroup = function*(m, mentorId) {
   }
 
   if (!group) {
-    group = (yield api.slackApi("groups.create", {name: name})).group;
+    var iter = 0;
+    while (!group) {
+      try {
+        group = (yield api.slackApi("groups.create", {name: name})).group;
+      } catch(err) {
+          if (err.message === "name_taken") {
+            name = `${mentor.name}-${mentee.name}-${iter}`;
+            iter += 1;
+          } else {
+            throw err;
+          }
+      }
+    }
   } else if (group.is_archived) {
     yield api.slackApi("groups.unarchive", {channel: group.id});
   }
@@ -196,7 +209,7 @@ var onUserJoined = function*(m) {
 }
 
 api.on("message", function*(m) {
-  if (m.type === "reaction_added" && m.item.channel === mentorGroupId) {
+  if (m.type === "reaction_added" && m.item.channel === (yield mentorGroupId)) {
     yield onReactionAdded(m);
   } else if (m.type === "team_join") {
     yield onUserJoined(m);
