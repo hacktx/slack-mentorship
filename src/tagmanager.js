@@ -60,6 +60,29 @@ class TagManager extends EventEmitter {
     trie._v = val;
   }
 
+  updateComponents(components) {
+    var tags = components
+      .filter(s => s)
+      .map(s => s.replace("#", ""))
+      .map(s => this.tagWithName(s))
+      .filter(s => {
+        if (this.chosen.indexOf(s) != -1) return false;
+        return s;
+      });
+
+    this.chosen = this.chosen.concat(tags);
+    
+    var custom = components.filter(s => {
+      var stripped = s.replace("#", "");
+      if (this.customListeners.indexOf(s) != -1) return false;
+      if (this.tagWithName(stripped)) return false;
+      if (this.allSynonyms.indexOf(stripped) !== -1) return false;
+      return true;
+    });
+
+    this.customListeners = this.customListeners.concat(custom);
+  }
+
   _traverse(trie, word) {
     if (!trie) return null;
     if (word == "") return trie;
@@ -79,28 +102,6 @@ class TagManager extends EventEmitter {
     return res;
   }
 
-  updateComponents(components) {
-    var tags = components
-      .filter(s => s)
-      .map(s => s.replace("#", ""))
-      .map(s => this.tagWithName(s))
-      .filter(s => {
-        if (this.chosen.indexOf(s) != -1) return false;
-        return s;
-      });
-
-    this.chosen = this.chosen.concat(tags);
-     var custom = components.filter(s => {
-      var stripped = s.replace("#", "");
-      if (this.customListeners.indexOf(s) != -1) return false;
-      if (this.tagWithName(stripped)) return false;
-      if (this.allSynonyms.indexOf(stripped) !== -1) return false;
-      return true;
-    });
-
-    this.customListeners = this.customListeners.concat(custom);
-  }
-
   search(query, limit = 10) {
     if (!query) {
       return this.topTags().slice(0, limit);
@@ -108,7 +109,7 @@ class TagManager extends EventEmitter {
     var seen = {};
     query = query.toLowerCase().replace("#", "");
     var start = this._traverse(this.index, query);
-    return this._suffixes(start, query)
+    var search_results = this._suffixes(start, query)
     .filter((a) => {
       if (seen[a[1]]) return false;
       seen[a[1]] = true;
@@ -129,7 +130,15 @@ class TagManager extends EventEmitter {
       return aTag.count < bTag.count ? 1 : -1;
     })
     .map(v => this.tags[v[1]])
-    .slice(0, limit)
+    .slice(0, limit);
+
+    if (search_results.indexOf(query) == -1 &&
+        this.customListeners.indexOf(query) == -1 &&
+        !this.tagWithName(query)) {
+        return [{name: query}].concat(search_results);
+    } else {
+        return search_results;
+    }
   }
 
   indexOfTag(tag) {
@@ -140,11 +149,10 @@ class TagManager extends EventEmitter {
   }
 
   add(tag, after) {
-    if (this.tagIsChosen(tag)) {
-      return;
-    }
     if (after && this.tagIsChosen(after)) {
       this.chosen.splice(this.indexOfTag(after) + 1, 0, tag);
+    } else if (!this.tagWithName(tag.name)) {
+      this.customListeners.unshift(tag.name);
     } else {
       this.chosen.unshift(tag);
     }
@@ -153,8 +161,16 @@ class TagManager extends EventEmitter {
 
   remove(tag) {
     var index = this.indexOfTag(tag);
-    if (index === -1) return;
-    this.chosen.splice(index, 1);
+    if (index != -1) {
+        this.chosen.splice(index, 1);
+    } else {
+        index = this.customListeners.indexOf(tag.name);
+        if (index != -1) {
+            this.customListeners.splice(index, 1);
+        } else {
+            return;
+        }
+    }
     this.save();
   }
 
@@ -163,7 +179,11 @@ class TagManager extends EventEmitter {
   }
 
   getChosen(limit = 10) {
-    return this.chosen;
+      return this.chosen.concat(
+          this.customListeners.map((name) => {
+              return {name: name, related: []};
+          })
+      );
   }
 
   topChosen() {

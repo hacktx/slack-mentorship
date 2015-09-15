@@ -64,7 +64,7 @@ class SearchList extends React.Component {
         manager.add(tag);
       };
       return (
-        <li onClick={addTag} key={tag.name + "-yodawg"} className="collection-item">
+        <li onClick={addTag} key={tag.name + "-yodawg"} className={"collection-item" + (tag.related ? "" : " custom-tag")}>
           <div>
             {tag.name}
             <a onClick={addTag} className="secondary-content"><i className="material-icons">add</i></a>
@@ -133,7 +133,7 @@ class ChosenList extends React.Component {
        .map(s => renderSuggestion(s, tag));
        return (
          <li key={tag.name + "-item"}>
-           <div className="collapsible-header">
+           <div className={"collapsible-header" + (tag.related.length > 0 ? "" : " custom-tag")}>
              {tag.name}
              <a onClick={deleteTag}><i onClick={deleteTag} className="material-icons right-icon secondary-content">delete</i></a>
            </div>

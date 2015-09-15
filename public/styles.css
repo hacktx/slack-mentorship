@@ -7,3 +7,11 @@
 .collapsible {
   box-shadow: none;
 }
+
+.custom-tag {
+  background: #eee;
+}
+
+.collection-item.custom-tag {
+  background-color: #eee;
+}
