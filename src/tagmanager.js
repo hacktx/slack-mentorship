@@ -45,7 +45,7 @@ class TagManager extends EventEmitter {
       url: "/presetTags",
     }).then((components) => {
       this.updateComponents(components);
-      this.save();
+      this.emit("change");
     })
   }
 
@@ -63,7 +63,7 @@ class TagManager extends EventEmitter {
   updateComponents(components) {
     var tags = components
       .filter(s => s)
-      .map(s => s.replace("#", ""))
+      .map(s => s.charAt(0) == "#" ? s.substring(1) : s)
       .map(s => this.tagWithName(s))
       .filter(s => {
         if (this.chosen.indexOf(s) != -1) return false;
@@ -71,9 +71,9 @@ class TagManager extends EventEmitter {
       });
 
     this.chosen = this.chosen.concat(tags);
-    
+
     var custom = components.filter(s => {
-      var stripped = s.replace("#", "");
+      var stripped = s.charAt(0) == "#" ? s.substring(1) : s;
       if (this.customListeners.indexOf(s) != -1) return false;
       if (this.tagWithName(stripped)) return false;
       if (this.allSynonyms.indexOf(stripped) !== -1) return false;
@@ -240,13 +240,16 @@ class TagManager extends EventEmitter {
   save() {
     this.emit("change");
     var tags = this.customListeners.concat();
+
     this.chosen.forEach(t => {
       tags.push(`#${t.name}`);
       t.synonyms.forEach(s => tags.push(`#${s}`));
     });
+
     tags = tags.filter(t => {
       return t !== "" && t !== " ";
     });
+
     $.ajax({
       method: "POST",
       url: "/highlight",
