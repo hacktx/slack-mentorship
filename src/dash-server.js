@@ -55,20 +55,6 @@ var getPrefs = (token) => {
   return request(`https://slack.com/api/users.prefs.get?token=${token}`);
 }
 
-app.get("/presetTags", (req, res) => {
-    getProfile(req.session.token)
-      .then()
-      .then((resp) => {
-        var email = resp.profile.email;
-
-        if (email in mentor_tags) {
-          res.json(mentor_tags[email]);
-        } else {
-          res.json([]);
-        }
-      }).done();
-});
-
 app.get("/oauth", (req, res) => {
   api.slackApi("oauth.access", {
     client_id: client_id,
@@ -115,8 +101,22 @@ app.post("/highlight", (req, res) => {
 app.get("/highlights", (req, res) => {
   getPrefs(req.session.token)
   .then()
-  .then((resp) => {    
-    res.json(resp.prefs.highlight_words);
+  .then((resp) => {
+    if (resp.prefs.highlight_words) {
+      res.json(resp.prefs.highlight_words.split(","));
+    } else {
+      getProfile(req.session.token)
+        .then()
+        .then((resp) => {
+          var email = resp.profile.email;
+
+          if (email in mentor_tags) {
+              res.json(mentor_tags[email]);
+          } else {
+              res.json([]);
+          }
+        })
+    }
   })
   .done()
 });

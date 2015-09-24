@@ -13,7 +13,6 @@ class TagManager extends EventEmitter {
     this._populateRelated();
     this._populateAllSynonyms();
     this._buildIndex();
-    this._populatePresetTags();
   }
 
   _populateRelated() {
@@ -37,16 +36,6 @@ class TagManager extends EventEmitter {
         this._insert(this.index, syn, i);
       });
     });
-  }
-
-  _populatePresetTags() {
-    $.ajax({
-      method: "GET",
-      url: "/presetTags",
-    }).then((components) => {
-      this.updateComponents(components);
-      this.emit("change");
-    })
   }
 
   _insert(trie, word, val) {
@@ -230,11 +219,10 @@ class TagManager extends EventEmitter {
     return $.ajax({
       url: "/highlights",
       method: "GET"
-    }).then(rawStr => {
-      var components = rawStr.split(",");
-      this.updateComponents(components);
-      this.emit("change");
-    })
+      }).then(components => {
+        this.updateComponents(components);
+        this.emit("change");
+      });
   }
 
   save() {
